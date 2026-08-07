@@ -1,6 +1,6 @@
 ---
 name: jarvis-github-agentuse
-description: Guía de uso de herramientas GitHub para agentes (gh CLI, GitHub MCP, GraphQL API, REST API). Usar cuando se necesite interactuar con GitHub: issues, PRs, projects, releases, actions, secrets, labels. Cubre qué herramienta usar según el caso, limitaciones de GITHUB_TOKEN, diferencias classic vs fine-grained PAT, y patrones comunes.
+description: "Guía de uso de herramientas GitHub para agentes (gh CLI, GitHub MCP, GraphQL API, REST API). Usar cuando se necesite interactuar con GitHub: issues, PRs, projects, releases, actions, secrets, labels. Cubre qué herramienta usar según el caso, limitaciones de GITHUB_TOKEN, diferencias classic vs fine-grained PAT, y patrones comunes."
 ---
 
 # Jarvis — GitHub Agent Use
