@@ -387,25 +387,28 @@ En `ci-quality.yml`, job `Regenerate changelog`:
 - Usa `GH_PAT` (classic PAT con `read:project`) — GITHUB_TOKEN no accede a Projects
 - Sin `continue-on-error` — falla honestamente si el token no funciona
 
-## Ejecución local de GraphQL
+## Ejecución de GraphQL (sin archivos temporales)
 
-Siempre escribir la query a un archivo temporal y usar `gh api graphql -F query=@file`:
-```python
-import tempfile, subprocess, json
-fd, fn = tempfile.mkstemp(suffix='.gql')
-with os.fdopen(fd, 'w') as f:
-    f.write(query)
-r = subprocess.run(['gh', 'api', 'graphql', '-F', f'query=@{fn}'],
-                   capture_output=True, encoding='utf-8', timeout=30)
-os.remove(fn)
+**PROHIBIDO** crear scripts one-shot (`.py`, `.sh`, `.gql`, `.tmp*`) ni dentro ni fuera del repo para operaciones puntuales.
+
+- **Queries/mutaciones cortas** — inline:
+```bash
+gh api graphql -f query='mutation { updateProjectV2ItemFieldValue(input: {projectId: "...", itemId: "...", fieldId: "...", value: {singleSelectOptionId: "..."}}) { clientMutationId } }'
 ```
+- **Queries largas o con bodies grandes** — por stdin (heredoc), sin volcar a archivo:
+```bash
+gh api graphql -F query=@- <<'GQL'
+query { node(id: "...") { ... on ProjectV2Item { content { ... on DraftIssue { body } } } } }
+GQL
+```
+- **Issue bodies grandes**: `gh issue edit N --body-file -` con el body por stdin.
+- **Lógica extra** (parsear/iterar): `python -c "..."` inline que invoca `gh api` con la query por stdin; la query se puede pasar como heredoc dentro del comando. Nunca `write_file` a un script.
+- Para escapar caracteres especiales en bodies, usar `jq -Rs .` o `python -c "import json,sys; print(json.dumps(sys.stdin.read()))"` — sin archivos.
 
-Para bodies largos con caracteres especiales, usar `json.dumps()` para escapar.
+## Regla: operaciones one-shot SIN scripts (ni dentro ni fuera del repo)
 
-## Regla: operaciones one-shot SIN scripts basura
-
-- Ejecutar operaciones puntuales **en terminal sin volcar archivos al repo**: `python -c "..."` inline, `gh api graphql -F query=@<(echo ...)`, o archivos temporales en `/tmp` que se autolimpian (`tempfile.mkstemp` + `os.remove`).
-- **NUNCA crear `_*.py` / `_*.gql` / `.tmp*` en `Jarvis/scripts/`** ni en el repo para operaciones one-shot — se acumulan sin que nadie los borre.
+- Ejecutar operaciones puntuales **directamente con `gh` o MCP**: inline, por stdin, o `python -c` con la lógica inline.
+- **NUNCA** crear `_*.py` / `_*.gql` / `.tmp*` / `.sh` en ningún sitio (ni `Jarvis/scripts/`, ni `/tmp`, ni `C:/tmp`) para operaciones one-shot.
 - **Solo versionar scripts en `Jarvis/scripts/`** si son reutilizables (`kanban-sync.py`, `generate-changelog-json.py`, `kanban-close.ps1`), con docstring y tests en `scripts/tests/`.
-- Si un one-shot se vuelve reutilizable: convertirlo a script versionado con tests (nunca dejar la versión temporal).
-- Al terminar cada tarea de items: `git status` debe quedar sin temporales nuevos.
+- Si una operación se repite: convertirla a comando de skill o script versionado con tests; nunca dejar temporales.
+- Al terminar cada tarea de items: `git status` debe quedar limpio (no se generan temporales si no se crean).
