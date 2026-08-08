@@ -401,3 +401,11 @@ os.remove(fn)
 ```
 
 Para bodies largos con caracteres especiales, usar `json.dumps()` para escapar.
+
+## Regla: operaciones one-shot SIN scripts basura
+
+- Ejecutar operaciones puntuales **en terminal sin volcar archivos al repo**: `python -c "..."` inline, `gh api graphql -F query=@<(echo ...)`, o archivos temporales en `/tmp` que se autolimpian (`tempfile.mkstemp` + `os.remove`).
+- **NUNCA crear `_*.py` / `_*.gql` / `.tmp*` en `Jarvis/scripts/`** ni en el repo para operaciones one-shot — se acumulan sin que nadie los borre.
+- **Solo versionar scripts en `Jarvis/scripts/`** si son reutilizables (`kanban-sync.py`, `generate-changelog-json.py`, `kanban-close.ps1`), con docstring y tests en `scripts/tests/`.
+- Si un one-shot se vuelve reutilizable: convertirlo a script versionado con tests (nunca dejar la versión temporal).
+- Al terminar cada tarea de items: `git status` debe quedar sin temporales nuevos.
