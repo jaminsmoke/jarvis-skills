@@ -26,52 +26,19 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
   const inicioExacto = now.toISOString().replace(/\.\d{3}Z$/, "Z")
   const inicio = now.toISOString().slice(0, 10)
 
-  // The mutation doesn't return the item ID (GitHub API limitation).
-  // Create, then find by title in the most recent items.
-  await gql(
+  // addProjectV2DraftIssue returns the item ID directly (confirmed via API test).
+  const createResult = await gql<{
+    addProjectV2DraftIssue: { projectItem: { id: string } }
+  }>(
     `mutation($projectId: ID!, $title: String!, $body: String!) {
       addProjectV2DraftIssue(input: { projectId: $projectId, title: $title, body: $body }) {
-        clientMutationId
+        projectItem { id }
       }
     }`,
     { projectId: fields.projectId, title: input.title, body }
   )
 
-  // Find the newly created item by title
-  const result = await gql(
-    `query($projectId: ID!) {
-      node(id: $projectId) {
-        ... on ProjectV2 {
-          items(last: 10) {
-            nodes { id, content { __typename, ... on DraftIssue { title } ... on Issue { title } } }
-          }
-        }
-      }
-    }`,
-    { projectId: fields.projectId }
-  ) as { node: { items: { nodes: Array<{ id: string; content: Record<string, unknown> }> } } }
-
-  // GitHub API eventual consistency: retry find for up to 5s
-  let found: { id: string } | undefined
-  for (let attempt = 0; attempt < 10; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 500))
-    const q = await gql(
-      `query($projectId: ID!) {
-        node(id: $projectId) {
-          ... on ProjectV2 {
-            items(last: 10) {
-              nodes { id, content { __typename, ... on DraftIssue { title } ... on Issue { title } } }
-            }
-          }
-        }
-      }`,
-      { projectId: fields.projectId }
-    ) as { node: { items: { nodes: Array<{ id: string; content: { title?: string } }> } } }
-    found = q.node.items.nodes.find((n) => n.content.title === input.title) as { id: string } | undefined
-    if (found) break
-  }
-  if (!found) throw new Error("Item created but could not be found by title. Retry with a unique title.")
-  const itemId = found.id
+  const itemId = createResult.addProjectV2DraftIssue.projectItem.id
 
   // Set all fields
   const setField = async (fieldId: string, optionId: string) => {
@@ -185,4 +152,65 @@ export async function appendBodySection(itemId: string, sectionName: string, con
   const current = await getBody(itemId)
   const updated = appendSection(current, sectionName, content)
   await updateBody(itemId, updated)
+}
+
+/**
+ * Move an item to a new position in the kanban.
+ * Pass afterId to place after a specific item, or omit to move to top.
+ */
+export async function moveItem(
+  projectId: string,
+  itemId: string,
+  afterId?: string,
+): Promise<void> {
+  await gql(
+    `mutation($projectId: ID!, $itemId: ID!, $afterId: ID) {
+      updateProjectV2ItemPosition(input: { projectId: $projectId, itemId: $itemId, afterId: $afterId }) {
+        clientMutationId
+      }
+    }`,
+    { projectId, itemId, afterId: afterId ?? null },
+  )
+}
+
+/**
+ * Archive an item in the project (soft delete).
+ */
+export async function archiveItem(projectId: string, itemId: string): Promise<void> {
+  await gql(
+    `mutation($projectId: ID!, $itemId: ID!) {
+      archiveProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) { clientMutationId }
+    }`,
+    { projectId, itemId },
+  )
+}
+
+/**
+ * Unarchive a previously archived item.
+ */
+export async function unarchiveItem(projectId: string, itemId: string): Promise<void> {
+  await gql(
+    `mutation($projectId: ID!, $itemId: ID!) {
+      unarchiveProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) { clientMutationId }
+    }`,
+    { projectId, itemId },
+  )
+}
+
+/**
+ * Clear (remove) a field value from an item.
+ */
+export async function clearFieldValue(
+  projectId: string,
+  itemId: string,
+  fieldId: string,
+): Promise<void> {
+  await gql(
+    `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
+      clearProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $fieldId }) {
+        clientMutationId
+      }
+    }`,
+    { projectId, itemId, fieldId },
+  )
 }

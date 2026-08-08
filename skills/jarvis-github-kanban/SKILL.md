@@ -33,11 +33,20 @@ bun kanban body <itemId>                    # leer
 bun kanban body <itemId> --set "..."        # reemplazar
 bun kanban body <itemId> --append "Plan" "contenido"  # añadir sección
 
-# Transicionar entre estados
-# (próximo comando: bun kanban move)
+# Gestionar campos
+bun kanban create-field --name "Nuevo Campo" --data-type SINGLE_SELECT --options "A:BLUE,B:GREEN"
+bun kanban add-option --field-id "PVTSSF_..." --name "Opcion C" --color PURPLE --desc "Descripción"
+bun kanban update-field --field-id "PVTSSF_..." --options "A:BLUE,B:GREEN,C:PURPLE"
+bun kanban delete-field --field-id "PVTSSF_..."
 
-# Auditoría + changelog
-# (próximo: bun kanban audit, bun kanban changelog)
+# Convertir Draft a Issue
+bun kanban convert-draft <itemId>
+
+# Mover / archivar items
+bun kanban move <itemId> [--after <afterId>]
+bun kanban archive <itemId>
+bun kanban unarchive <itemId>
+bun kanban clear-field <itemId> --field-id "..."
 ```
 
 Si la CLI no está disponible, usar los comandos de bajo nivel descritos abajo con `gh api graphql`.
@@ -162,16 +171,19 @@ bun kanban body <itemId> --append "Criterios de aceptación" "- [ ] typecheck li
 ### 4. Ejecutando → Convertir a Issue (ANTES de escribir código)
 
 ```bash
-# 1. Convertir DraftIssue → Issue (GraphQL)
-gh api graphql -f query='mutation { convertProjectV2DraftIssueItemToIssue(input: {itemId: "<ITEM_ID>", repositoryId: "R_kgDOTxw4Iw"}) { clientMutationId } }'
+# 1. Convertir DraftIssue → Issue
+bun kanban convert-draft <ITEM_ID>
+# Output: { itemId, issueNumber, issueUrl }
 
-# 2. Verificar que el Issue se creó
-gh project item-list 6 --owner jaminsmoke --limit 5 | grep "<title>"
-
-# 3. Añadir labels según Tipo + Área
+# 2. Añadir labels según Tipo + Área
 gh issue edit <N> --repo jaminsmoke/Jarvis --add-label "feature,infra"
 
-# 4. Mover a Ejecutando (UI o GraphQL)
+# 3. Mover a Ejecutando
+bun kanban move <ITEM_ID> [--after <afterId>]  # mover posición en el kanban
+bun kanban archive <ITEM_ID>                   # archivar (soft delete)
+bun kanban unarchive <ITEM_ID>                 # desarchivar
+bun kanban clear-field <ITEM_ID> --field-id "..."  # limpiar valor de campo
+# Por ahora: gh api graphql con updateProjectV2ItemFieldValue
 ```
 
 - **Nunca reemplazar** el cuerpo por plantilla vacía.
@@ -234,12 +246,49 @@ python scripts/kanban-sync.py changelog
 
 Consultar `.kanbanrc.json` en la raíz del proyecto para Prioridad, Decisión, Tipo, Área, Versión, HighLighted.
 
+## Gestión de campos y opciones (API completa)
+
+Todas las operaciones de campos se pueden hacer por API (GraphQL) y CLI:
+
+```bash
+# Crear campo nuevo (con opciones iniciales si es SINGLE_SELECT)
+bun kanban create-field --name "Estimación" --data-type SINGLE_SELECT \
+  --options "Small:BLUE,Medium:YELLOW,Large:RED"
+
+# Añadir una opción a un campo SingleSelect existente
+bun kanban add-option --field-id "PVTSSF_..." --name "XL" --color PURPLE --desc "Extra Large"
+
+# Actualizar todas las opciones de golpe (reemplazo completo)
+bun kanban update-field --field-id "PVTSSF_..." --options "S:BLUE,M:YELLOW,L:RED,XL:PURPLE"
+
+# Eliminar campo
+bun kanban delete-field --field-id "PVTSSF_..."
+```
+
+**⚠️ Importante**: `add-option` y `update-field` con `--options` hacen un **reemplazo completo** de opciones. Todos los IDs de opciones cambian. Después de cualquier cambio, regenerar `.kanbanrc.json`:
+```bash
+bun kanban config generate --project PVT_kwHOBM87Yc4Bfu74
+```
+
+### DataTypes soportados
+`TEXT`, `SINGLE_SELECT`, `MULTI_SELECT`, `NUMBER`, `DATE`, `ITERATION`
+
+### Colores válidos para opciones
+`GRAY`, `BLUE`, `GREEN`, `YELLOW`, `ORANGE`, `RED`, `PINK`, `PURPLE`
+
 ## Versión objetivo móvil
 
 1. Consultar release `latest` en GitHub. No asumirla.
 2. Derivar siguiente patch: `vX.Y.(Z+1)`.
 3. Si el alcance exige minor/major, decidirlo en Debate.
-4. **Crear nueva versión**: NO hay API. Ir a Project Settings → Fields → Versión → Add option. Luego regenerar `.kanbanrc.json`.
+4. **Crear nueva versión (opción en campo Versión)**: 
+```bash
+# Añadir una opción al campo Versión (pasa todas las existentes + la nueva)
+bun kanban add-option --field-id "$(bun kanban config field-id Versión)" \
+  --name "v0.1.6" --color BLUE --desc "Versión v0.1.6"
+# ⚠️ Los IDs de todas las opciones cambian. Regenerar .kanbanrc.json:
+bun kanban config generate --project PVT_kwHOBM87Yc4Bfu74
+```
 5. Al publicar la versión, crear preventivamente la siguiente opción.
 6. `Sin asignar` es siempre inconsistencia — corregir.
 
