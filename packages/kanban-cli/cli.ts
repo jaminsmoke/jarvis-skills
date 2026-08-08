@@ -13,6 +13,9 @@ import { loadConfig } from "./src/config"
 import { FieldResolver } from "./src/fields"
 import { TEMPLATES, appendSection } from "./src/templates"
 import { createItem, getBody, updateBody } from "./src/items"
+import { generateConfig, validateConfig } from "./src/config-tools"
+import { listItems } from "./src/list"
+import { writeFileSync } from "node:fs"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -38,7 +41,10 @@ Usage:
   bun cli.ts body <itemId>                   # read current body
   bun cli.ts body <itemId> --set "..."       # replace entire body
   bun cli.ts body <itemId> --append "Plan" "content"  # append a section
-  bun cli.ts help                            # show this help
+  bun cli.ts config generate --project PVT_...         # generate .kanbanrc.json
+  bun cli.ts config validate                           # validate against Project
+  bun cli.ts list [--status X] [--tipo X] [--area X]  # list items
+  bun cli.ts help                                      # show this help
 `)
     return
   }
@@ -88,6 +94,56 @@ Usage:
       const body = await getBody(itemId)
       console.log(body)
     }
+    return
+  }
+
+  if (command === "config") {
+    const sub = args[1]
+    const flags = parseFlags(args.slice(2))
+
+    if (sub === "generate") {
+      const projectId = flags.project
+      if (!projectId) {
+        console.error("ERROR: --project <PROJECT_ID> is required")
+        process.exit(1)
+      }
+      const cfg = await generateConfig(projectId)
+      writeFileSync(".kanbanrc.json", JSON.stringify(cfg, null, 2) + "\n")
+      console.log("Generated .kanbanrc.json with", Object.keys(cfg.fields).length, "fields")
+      console.log("⚠️  Fill in repoId and repo manually")
+      return
+    }
+
+    if (sub === "validate") {
+      const issues = await validateConfig()
+      if (issues.length === 0) {
+        console.log("✅ .kanbanrc.json is valid")
+      } else {
+        console.log(`❌ ${issues.length} issues found:`)
+        for (const i of issues) console.log("  -", i)
+        process.exit(1)
+      }
+      return
+    }
+
+    console.error("Usage: bun cli.ts config <generate|validate>")
+    process.exit(1)
+  }
+
+  if (command === "list") {
+    const flags = parseFlags(args.slice(1))
+    const items = await listItems({
+      status: flags.status,
+      tipo: flags.tipo,
+      area: flags.area,
+      version: flags.version,
+      limit: flags.limit ? parseInt(flags.limit) : 50,
+    })
+    for (const item of items) {
+      const num = item.number ? `#${item.number}` : "DRAFT"
+      console.log(`${item.id.slice(0, 20)} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 60)}`)
+    }
+    console.log(`${items.length} items`)
     return
   }
 

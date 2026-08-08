@@ -59,7 +59,7 @@ function validateConfig(c: KanbanConfig): void {
   for (const key of required) {
     if (!(key in c)) throw new Error(`.kanbanrc.json missing required key: ${key}`)
   }
-  const requiredFields = ["Status", "Version", "Prioridad", "Decision", "Tipo", "Area", "HighLighted"]
+  const requiredFields = ["Status", "Versión", "Prioridad", "Decision", "Tipo", "Área principal", "HighLighted"]
   for (const f of requiredFields) {
     if (!(f in c.fields)) throw new Error(`.kanbanrc.json fields missing: ${f}`)
   }

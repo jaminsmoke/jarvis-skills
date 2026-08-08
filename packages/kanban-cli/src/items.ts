@@ -111,10 +111,10 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
   }
 
   await setField(fields.fieldId("Status"), fields.status("Detectado"))
-  await setField(fields.fieldId("Version"), fields.version(input.version ?? "Sin asignar"))
+  await setField(fields.fieldId("Versión"), fields.version(input.version ?? "Sin asignar"))
   await setField(fields.fieldId("Prioridad"), fields.priority(input.priority ?? "Alta"))
   if (input.tipo) await setField(fields.fieldId("Tipo"), fields.tipo(input.tipo))
-  if (input.area) await setField(fields.fieldId("Area"), fields.area(input.area))
+  if (input.area) await setField(fields.fieldId("Área principal"), fields.area(input.area))
   await setText(fields.fieldId("Inicio exacto"), inicioExacto)
   await setDate(fields.fieldId("Inicio"), inicio)
 
