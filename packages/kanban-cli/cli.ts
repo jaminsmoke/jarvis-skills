@@ -83,7 +83,7 @@ Usage:
       console.log("Body replaced OK")
     } else if (flags.append) {
       const section = flags.append
-      const content = flags.content ?? args.slice(args.indexOf(section) + 2).join(" ")
+      const content = flags.content ?? args.slice(args.indexOf(section) + 1).join(" ")
       if (!content) {
         console.error("ERROR: --append requires --content or positional content")
         process.exit(1)
