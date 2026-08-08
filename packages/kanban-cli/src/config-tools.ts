@@ -164,5 +164,62 @@ export async function validateConfig(): Promise<string[]> {
     }
   }
 
+  // Check for Drafts in wrong states (need to query items)
+  const statusFieldId = cfg.fields["Status"]
+  const executingId = cfg.options.status["Ejecutando"]
+  const verifyingId = cfg.options.status["Verificando"]
+  const changelogId = cfg.options.status["Changelog"]
+  const forbiddenIds = [executingId, verifyingId, changelogId].filter(Boolean)
+
+  if (statusFieldId && forbiddenIds.length > 0) {
+    const itemsData = await gql<{
+      node: {
+        items: {
+          nodes: Array<{
+            id: string
+            content: { __typename: string; title?: string; number?: number }
+            fieldValues?: { nodes?: Array<{ field?: { id?: string }; name?: string; optionId?: string }> }
+          }>
+        }
+      }
+    }>(
+      `query($projectId: ID!) {
+        node(id: $projectId) {
+          ... on ProjectV2 {
+            items(first: 100) {
+              nodes {
+                id
+                content { ... on DraftIssue { title } ... on Issue { title, number } }
+                fieldValues(first: 20) {
+                  nodes { ... on ProjectV2ItemFieldSingleSelectValue { field { ... on ProjectV2Field { id } }, name, optionId } }
+                }
+              }
+            }
+          }
+        }
+      }`,
+      { projectId: cfg.projectId }
+    )
+
+    for (const item of itemsData.node.items.nodes) {
+      const isDraft = !("number" in item.content)
+      if (!isDraft) continue
+
+      const statusVal = item.fieldValues?.nodes?.find(
+        (fv: { field?: { id?: string } }) => fv.field?.id === statusFieldId
+      )
+      if (!statusVal) continue
+
+      const optionId = (statusVal as { optionId?: string }).optionId
+      if (optionId && forbiddenIds.includes(optionId)) {
+        const title = item.content.title ?? "(sin titulo)"
+        const statusName = statusVal.name ?? optionId
+        issues.push(
+          `DRAFT in forbidden state: "${title.slice(0, 50)}" is DraftIssue but Status=${statusName}. Convert to Issue first.`
+        )
+      }
+    }
+  }
+
   return issues
 }
