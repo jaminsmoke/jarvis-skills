@@ -112,7 +112,7 @@ gh issue edit 4 --repo jaminsmoke/Jarvis --title "nuevo titulo" --add-label secu
 ### Releases
 ```bash
 gh release list --repo jaminsmoke/Jarvis
-gh release view v0.1.4 --repo jaminsmoke/Jarvis --json tagName,isLatest
+gh release view v0.1.0 --repo jaminsmoke/Jarvis --json tagName,isLatest
 ```
 
 ### Secrets
