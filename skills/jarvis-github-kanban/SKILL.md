@@ -306,7 +306,7 @@ python scripts/kanban-sync.py changelog
 | No | `6d05e0b6` |
 
 > 🔧 **Sync**: estas tablas reflejan el Project #6. Si cambias campos/opciones (crear versión, renombrar opción), regenerar `.kanbanrc.json` con `bun kanban config generate --project PVT_kwHOBM87Yc4Bfu74` y actualizar esta sección.
-> ⚠️ El campo **TEST_INTEGRAL** (`PVTSSF_lAHOBM87Yc4Bfu74zhaCptA`, opciones Rojo/Azul/Verde) es un campo de prueba creado durante el test integral del CLI. No usarlo para items reales; se puede borrar con `bun kanban delete-field --field-id PVTSSF_lAHOBM87Yc4Bfu74zhaCptA` cuando ya no haga falta.
+> ✅ El campo de prueba **TEST_INTEGRAL** se eliminó del proyecto (2026-08-09). No forma parte de los campos canónicos.
 
 ## Gestión de campos y opciones (API completa)
 
