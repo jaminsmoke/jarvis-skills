@@ -26,6 +26,18 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
   const inicioExacto = now.toISOString().replace(/\.\d{3}Z$/, "Z")
   const inicio = now.toISOString().slice(0, 10)
 
+  // Resolve every field and option ID BEFORE creating the draft, so an invalid
+  // name fails fast and never leaves an orphaned DraftIssue behind.
+  const resolvedSelect = [
+    { fieldId: fields.fieldId("Status"), optionId: fields.status("Detectado") },
+    { fieldId: fields.fieldId("Versión"), optionId: fields.version(input.version ?? "Sin asignar") },
+    { fieldId: fields.fieldId("Prioridad"), optionId: fields.priority(input.priority ?? "Alta") },
+    ...(input.tipo ? [{ fieldId: fields.fieldId("Tipo"), optionId: fields.tipo(input.tipo) }] : []),
+    ...(input.area ? [{ fieldId: fields.fieldId("Área principal"), optionId: fields.area(input.area) }] : []),
+  ]
+  const inicioExactoFieldId = fields.fieldId("Inicio exacto")
+  const inicioFieldId = fields.fieldId("Inicio")
+
   // addProjectV2DraftIssue returns the item ID directly (confirmed via API test).
   const createResult = await gql<{
     addProjectV2DraftIssue: { projectItem: { id: string } }
@@ -77,13 +89,11 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
     )
   }
 
-  await setField(fields.fieldId("Status"), fields.status("Detectado"))
-  await setField(fields.fieldId("Versión"), fields.version(input.version ?? "Sin asignar"))
-  await setField(fields.fieldId("Prioridad"), fields.priority(input.priority ?? "Alta"))
-  if (input.tipo) await setField(fields.fieldId("Tipo"), fields.tipo(input.tipo))
-  if (input.area) await setField(fields.fieldId("Área principal"), fields.area(input.area))
-  await setText(fields.fieldId("Inicio exacto"), inicioExacto)
-  await setDate(fields.fieldId("Inicio"), inicio)
+  for (const { fieldId, optionId } of resolvedSelect) {
+    await setField(fieldId, optionId)
+  }
+  await setText(inicioExactoFieldId, inicioExacto)
+  await setDate(inicioFieldId, inicio)
 
   return { itemId, title: input.title }
 }

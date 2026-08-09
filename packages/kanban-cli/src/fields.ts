@@ -9,7 +9,10 @@ export class FieldResolver {
 
   fieldId(name: string): string {
     const id = this.cfg.fields[name]
-    if (!id) throw new Error(`Unknown field: ${name}`)
+    if (!id) {
+      const valid = Object.keys(this.cfg.fields).join(", ")
+      throw new Error(`Unknown field: ${name}. Valid fields: ${valid}`)
+    }
     return id
   }
 
@@ -17,7 +20,10 @@ export class FieldResolver {
     const options = this.cfg.options[category]
     if (!options) throw new Error(`Unknown option category: ${category}`)
     const id = options[name]
-    if (!id) throw new Error(`Unknown option "${name}" in category "${category}"`)
+    if (!id) {
+      const valid = Object.keys(options).join(", ")
+      throw new Error(`Unknown option "${name}" in category "${category}". Valid options: ${valid}`)
+    }
     return id
   }
 

@@ -3,7 +3,7 @@
  * kanban-cli — GitHub Projects kanban toolkit
  *
  * Usage:
- *   bun cli.ts create --title "Fix X" --tipo bug --area desktop
+ *   bun cli.ts create --title "Fix X" --tipo Bug --area Desktop
  *   bun cli.ts body <itemId>              # read body
  *   bun cli.ts body <itemId> --set "..."  # replace body
  *   bun cli.ts body <itemId> --append "Sección" "..." # append section
@@ -54,7 +54,7 @@ async function main() {
     console.log(`kanban-cli — GitHub Projects kanban toolkit
 
 Usage:
-  bun cli.ts create --title "Fix X" --tipo bug --area desktop [--priority Alta] [--body "..."]
+  bun cli.ts create --title "Fix X" --tipo Bug --area Desktop [--priority Alta] [--body "..."]
   bun cli.ts body <itemId>                   # read current body
   bun cli.ts body <itemId> --set "..."       # replace entire body
   bun cli.ts body <itemId> --append "Plan" "content"  # append a section
