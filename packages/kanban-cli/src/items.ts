@@ -88,6 +88,86 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
   return { itemId, title: input.title }
 }
 
+/** Map a field name to its option category in .kanbanrc.json */
+const FIELD_TO_CATEGORY: Record<string, keyof import("./config").KanbanConfig["options"]> = {
+  Status: "status",
+  "Versión": "version",
+  Version: "version",
+  Prioridad: "priority",
+  Priority: "priority",
+  "Decisión": "decision",
+  Decision: "decision",
+  Tipo: "tipo",
+  Type: "tipo",
+  "Área principal": "area",
+  Area: "area",
+  HighLighted: "highlighted",
+  Highlighted: "highlighted",
+}
+
+interface SetFieldInput {
+  option?: string
+  text?: string
+  date?: string
+}
+
+/**
+ * Set a field value on any item (Draft or Issue).
+ * Supports single-select options, text and date values.
+ */
+export async function setFieldValue(
+  fields: FieldResolver,
+  itemId: string,
+  fieldName: string,
+  value: SetFieldInput,
+): Promise<void> {
+  const fieldId = fields.fieldId(fieldName)
+
+  if (value.option) {
+    const category = FIELD_TO_CATEGORY[fieldName]
+    if (!category) throw new Error(`No option category known for field: ${fieldName}`)
+    const optionId = fields.optionId(category, value.option)
+    await gql(
+      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+        updateProjectV2ItemFieldValue(input: {
+          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+          value: { singleSelectOptionId: $optionId }
+        }) { clientMutationId }
+      }`,
+      { projectId: fields.projectId, itemId, fieldId, optionId }
+    )
+    return
+  }
+
+  if (value.text !== undefined) {
+    await gql(
+      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
+        updateProjectV2ItemFieldValue(input: {
+          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+          value: { text: $text }
+        }) { clientMutationId }
+      }`,
+      { projectId: fields.projectId, itemId, fieldId, text: value.text }
+    )
+    return
+  }
+
+  if (value.date) {
+    await gql(
+      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
+        updateProjectV2ItemFieldValue(input: {
+          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
+          value: { date: $date }
+        }) { clientMutationId }
+      }`,
+      { projectId: fields.projectId, itemId, fieldId, date: value.date }
+    )
+    return
+  }
+
+  throw new Error("Provide one of: --option, --text, --date")
+}
+
 /**
  * Get the current body of a DraftIssue.
  */

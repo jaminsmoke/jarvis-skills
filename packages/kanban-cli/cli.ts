@@ -12,7 +12,7 @@
 import { loadConfig } from "./src/config"
 import { FieldResolver } from "./src/fields"
 import { TEMPLATES, appendSection } from "./src/templates"
-import { createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue } from "./src/items"
+import { createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue } from "./src/items"
 import { generateConfig, validateConfig } from "./src/config-tools"
 import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
@@ -67,6 +67,9 @@ Usage:
   bun cli.ts delete-field --field-id "..."
   bun cli.ts convert-draft <itemId>
   bun cli.ts move <itemId> [--after <afterItemId>]
+  bun cli.ts set-field <itemId> --field "Status" --option "Roadmap"
+  bun cli.ts set-field <itemId> --field "Inicio exacto" --text "2026-08-09T00:00:00Z"
+  bun cli.ts set-field <itemId> --field "Completado" --date "2026-08-09"
   bun cli.ts archive <itemId>
   bun cli.ts unarchive <itemId>
   bun cli.ts clear-field <itemId> --field-id "..."
@@ -267,6 +270,26 @@ Usage:
     const flags = parseFlags(args.slice(2))
     await moveItem(cfg.projectId, itemId, flags.after)
     console.log(`Item ${itemId} moved${flags.after ? ` after ${flags.after}` : " to top"}`)
+    return
+  }
+
+  if (command === "set-field") {
+    const itemId = args[1]
+    if (!itemId) {
+      console.error("ERROR: itemId required")
+      process.exit(1)
+    }
+    const flags = parseFlags(args.slice(2))
+    if (!flags.field) {
+      console.error("ERROR: --field <fieldName> is required")
+      process.exit(1)
+    }
+    await setFieldValue(fields, itemId, flags.field, {
+      option: flags.option,
+      text: flags.text,
+      date: flags.date,
+    })
+    console.log(`Field "${flags.field}" set on ${itemId}`)
     return
   }
 
