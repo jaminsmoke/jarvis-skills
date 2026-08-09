@@ -242,9 +242,71 @@ python scripts/kanban-sync.py changelog
 | Verificando | `741a25fa` |
 | Changelog | `f9a1286b` |
 
-### Resto de opciones
+### Versión
 
-Consultar `.kanbanrc.json` en la raíz del proyecto para Prioridad, Decisión, Tipo, Área, Versión, HighLighted.
+| Opción | ID |
+|---|---|
+| Sin asignar | `b38b3c4e` |
+| v0.1.0 | `075d6fb1` |
+| v0.1.1 | `ace4e772` |
+| v0.1.2 | `b7128c7b` |
+| v0.1.3 | `4deda89b` |
+| v0.1.4 | `674f4064` |
+| v0.1.5 | `ec9916a0` |
+
+### Prioridad
+
+| Opción | ID |
+|---|---|
+| Alta | `6921d900` |
+| Media | `f5651c12` |
+| Baja | `2eee9b96` |
+
+### Decisión
+
+| Opción | ID |
+|---|---|
+| Pendiente | `836be57a` |
+| Aprobado | `f73848fa` |
+| Diferido | `d4010352` |
+| Cancelado | `57635fa9` |
+
+### Tipo
+
+| Opción | ID |
+|---|---|
+| Bug | `274ee788` |
+| Feature | `80bb9b0c` |
+| Maintenance | `f15d15e8` |
+| Security | `22af383b` |
+| Decision | `fcdd6924` |
+
+### Área principal
+
+| Opción | ID |
+|---|---|
+| App | `cef0dd05` |
+| Desktop | `cdf56c71` |
+| Core | `5b3f603e` |
+| Server | `394a3c9b` |
+| CI | `403239d7` |
+| Infra | `8d9d4236` |
+| Docs | `44c2fa77` |
+| Lint | `1603e9a1` |
+| Dependencies | `91bee31d` |
+| Release | `0e4281a5` |
+| Governance | `41e91e98` |
+| Upstream | `5977d3e8` |
+
+### HighLighted
+
+| Opción | ID |
+|---|---|
+| Yes | `573cc802` |
+| No | `6d05e0b6` |
+
+> 🔧 **Sync**: estas tablas reflejan el Project #6. Si cambias campos/opciones (crear versión, renombrar opción), regenerar `.kanbanrc.json` con `bun kanban config generate --project PVT_kwHOBM87Yc4Bfu74` y actualizar esta sección.
+> ⚠️ El campo **TEST_INTEGRAL** (`PVTSSF_lAHOBM87Yc4Bfu74zhaCptA`, opciones Rojo/Azul/Verde) es un campo de prueba creado durante el test integral del CLI. No usarlo para items reales; se puede borrar con `bun kanban delete-field --field-id PVTSSF_lAHOBM87Yc4Bfu74zhaCptA` cuando ya no haga falta.
 
 ## Gestión de campos y opciones (API completa)
 
@@ -327,6 +389,13 @@ En `ci-quality.yml`:
 - Ejecuta `python scripts/kanban-sync.py changelog`
 - Si hay diff en `docs/`, commitea y pushea
 - Usa `GH_PAT` (classic PAT con `read:project`)
+
+> ⚠️ **GH_PAT inválido (401)**: si el job de changelog falla con `Bad credentials`, el token guardado en el secreto expiró o fue revocado. Actualizarlo con el token funcional del kanban CLI:
+> ```bash
+> gh auth token | gh secret set GH_PAT --repo jaminsmoke/Jarvis
+> ```
+> Luego re-ejecutar solo el job fallido: `gh run rerun <RUN_ID> --repo jaminsmoke/Jarvis --failed`
+> (Ocurrió 2026-08-09: el secreto daba 401 hasta actualizarlo con el token local `gho_...` con scopes repo+project+workflow.)
 
 ## Regla: operaciones one-shot SIN scripts temporales
 
