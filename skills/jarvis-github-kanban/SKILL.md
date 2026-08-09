@@ -186,6 +186,14 @@ bun kanban clear-field <ITEM_ID> --field-id "..."  # limpiar valor de campo
 # Por ahora: gh api graphql con updateProjectV2ItemFieldValue
 ```
 
+**Bajo nivel (sin CLI) — conversión Draft → Issue**:
+```graphql
+mutation($iid:ID!,$rid:ID!){ convertProjectV2DraftIssueItemToIssue(input:{itemId:$iid, repositoryId:$rid}){ item{ content{ ... on Issue { number, title } } } } }
+```
+- ⚠️ **Payload real**: la mutación devuelve `item { content { ... on Issue { number } } }`. Los campos `issue` y `projectV2Item` **NO existen** en el payload (`ConvertProjectV2DraftIssueItemToIssuePayload` solo tiene `clientMutationId` e `item`) — usarlos produce error de schema. (Bug real encontrado 2026-08-09 al cerrar #26.)
+- `repositoryId` es el **node id del repo** (ej: `R_kgDOTx4wIw`), NO el projectId.
+- Verificar después que el content es `Issue` y que title/body se preservaron.
+
 - **Nunca reemplazar** el cuerpo por plantilla vacía.
 - Aplicar labels según Tipo + Área.
 - Verificar que title, body, labels, Status son coherentes.
@@ -210,6 +218,8 @@ gh issue edit <N> --repo jaminsmoke/Jarvis --title "✅ Título original"
 gh issue close <N> --repo jaminsmoke/Jarvis -r completed
 
 # 4. Mover a Changelog (UI o GraphQL)
+
+> 📌 **Campos de fechas por GraphQL**: `Inicio` y `Completado` son **Date** → `value: {date: "YYYY-MM-DD"}`. `Inicio exacto` y `Completado exacto` son **Text** → `value: {text: "<ISO-8601 UTC>"}`. Usar el tipo equivocado falla silenciosamente (la mutación devuelve error y el campo queda sin setear). (Encontrado 2026-08-09: "Completado exacto" quedó sin setear con `{date}` en #25 y #26.)
 
 # 5. Regenerar changelog
 python scripts/kanban-sync.py changelog
