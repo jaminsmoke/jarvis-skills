@@ -12,7 +12,7 @@
 import { loadConfig } from "./src/config"
 import { FieldResolver } from "./src/fields"
 
-import { appendBodySection, createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue } from "./src/items"
+import { appendBodySection, createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue, showItem } from "./src/items"
 import { generateConfig, validateConfig } from "./src/config-tools"
 import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
@@ -74,7 +74,8 @@ Usage:
   bun cli.ts create-view --name "Mi Vista" [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,Tipo"]
   bun cli.ts update-view <viewId> [--name "..."] [--layout BOARD_LAYOUT] [--visible-fields "Status,..."]
   bun cli.ts delete-view <viewId>
-  bun cli.ts list [--status X] [--tipo X] [--area X]  # list items
+  bun cli.ts show <itemId>                               # show all fields
+  bun cli.ts list [--status X] [--tipo X] [--area X] [--format json]  # list items
   bun cli.ts create-field --name "..." --data-type SINGLE_SELECT [--options "A:GRAY,B:BLUE"]
   bun cli.ts update-field --field-id "..." [--name "..."] [--options "A:GRAY,B:BLUE"]
   bun cli.ts add-option --field-id "..." --name "..." --color GRAY --desc "..."
@@ -182,11 +183,35 @@ Usage:
       version: flags.version,
       limit: flags.limit ? parseInt(flags.limit) : 50,
     })
-    for (const item of items) {
-      const num = item.number ? `#${item.number}` : "DRAFT"
-      console.log(`${item.id.slice(0, 20)} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 60)}`)
+    if (flags.format === "json") {
+      console.log(JSON.stringify(items, null, 2))
+    } else {
+      for (const item of items) {
+        const num = item.number ? `#${item.number}` : "DRAFT"
+        console.log(`${item.id.slice(0, 20)} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 60)}`)
+      }
+      console.log(`${items.length} items`)
     }
-    console.log(`${items.length} items`)
+    return
+  }
+
+  if (command === "show") {
+    const itemId = args[1]
+    if (!itemId) { console.error("ERROR: itemId required"); process.exit(1) }
+    const item = await showItem(itemId)
+    const num = item.number ? `#${item.number}` : "DRAFT"
+    console.log(`${num}  ${item.title}`)
+    console.log(`Type: ${item.type}`)
+    if (item.url) console.log(`URL: ${item.url}`)
+    console.log("")
+    for (const [name, value] of Object.entries(item.fields)) {
+      console.log(`${name.padEnd(20)} ${value}`)
+    }
+    if (item.body) {
+      console.log("")
+      console.log("--- Body ---")
+      console.log(item.body.slice(0, 500))
+    }
     return
   }
 

@@ -231,6 +231,74 @@ export async function unarchiveItem(projectId: string, itemId: string): Promise<
 /**
  * Clear (remove) a field value from an item.
  */
+export interface ShowItemResult {
+  id: string
+  title: string
+  type: "DraftIssue" | "Issue"
+  number?: number
+  url?: string
+  fields: Record<string, string>
+  body: string
+}
+
+/**
+ * Show all fields and metadata for a single item.
+ * Fetches fieldValues via GraphQL and returns a structured result.
+ */
+export async function showItem(itemId: string): Promise<ShowItemResult> {
+  const result = await gql<{
+    node: {
+      content: { __typename: string; title: string; number?: number; url?: string; body?: string }
+      fieldValues: {
+        nodes: Array<{
+          name?: string
+          date?: string
+          text?: string
+          field: { name: string }
+        }>
+      }
+    }
+  }>(
+    `query($itemId: ID!) {
+      node(id: $itemId) {
+        ... on ProjectV2Item {
+          content {
+            __typename
+            ... on DraftIssue { title, body }
+            ... on Issue { title, number, url, body }
+          }
+          fieldValues(first: 30) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue { name, field { ... on ProjectV2FieldCommon { name } } }
+              ... on ProjectV2ItemFieldDateValue { date, field { ... on ProjectV2FieldCommon { name } } }
+              ... on ProjectV2ItemFieldTextValue { text, field { ... on ProjectV2FieldCommon { name } } }
+            }
+          }
+        }
+      }
+    }`,
+    { itemId },
+  )
+
+  const fields: Record<string, string> = {}
+  for (const fv of result.node.fieldValues.nodes) {
+    if (fv.name) fields[fv.field.name] = fv.name
+    else if (fv.date) fields[fv.field.name] = fv.date
+    else if (fv.text) fields[fv.field.name] = fv.text
+  }
+
+  const ct = result.node.content
+  return {
+    id: itemId,
+    title: ct.title,
+    type: ct.__typename as "DraftIssue" | "Issue",
+    number: ct.number,
+    url: ct.url,
+    fields,
+    body: ct.body ?? "",
+  }
+}
+
 export async function clearFieldValue(
   projectId: string,
   itemId: string,
