@@ -4,14 +4,14 @@ import { loadConfig } from "./config"
 export type ViewLayout = "BOARD_LAYOUT" | "TABLE_LAYOUT" | "ROADMAP_LAYOUT"
 
 export interface CreateViewResult {
-  viewId: string
+  id: string
   number: number
   name: string
   layout: string
 }
 
 export interface UpdateViewResult {
-  viewId: string
+  id: string
   number: number
   name: string
   layout: string

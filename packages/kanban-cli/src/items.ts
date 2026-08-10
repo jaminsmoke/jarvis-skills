@@ -139,7 +139,8 @@ async function getItemStatus(itemId: string): Promise<{ status?: string; decisio
   for (const v of result.node.fieldValues.nodes) {
     if (v.name) fv[v.field.name] = v.name
   }
-  return { status: fv["Status"], decision: fv["Decisión"] }
+  // The field is "Decision" (config key); accept both spellings for robustness.
+  return { status: fv["Status"], decision: fv["Decision"] ?? fv["Decisión"] }
 }
 
 /**

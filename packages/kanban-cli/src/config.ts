@@ -51,8 +51,9 @@ export function loadConfig(): KanbanConfig {
     const path = resolve(dir, ".kanbanrc.json")
     try {
       const raw = readFileSync(path, "utf-8")
-      _config = JSON.parse(raw) as KanbanConfig
-      validateConfig(_config)
+      const parsed = JSON.parse(raw) as KanbanConfig
+      validateConfig(parsed)
+      _config = parsed
       return _config
     } catch (e: unknown) {
       if (e instanceof Error && "code" in e && (e as NodeJS.ErrnoException).code === "ENOENT") {
@@ -69,6 +70,13 @@ export function loadConfig(): KanbanConfig {
   }
 
   throw new Error(".kanbanrc.json not found. Create one in your project root.")
+}
+
+/**
+ * Test-only: clear the cached config so the next loadConfig() re-reads disk.
+ */
+export function _resetConfigForTests(): void {
+  _config = null
 }
 
 function validateConfig(c: KanbanConfig): void {
