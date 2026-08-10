@@ -105,7 +105,7 @@ Project Settings → Fields → + New field. Estructura recomendada:
 | **Status** | SingleSelect | Detectado, Debate, Roadmap, Ejecutando, Verificando, Changelog |
 | **Versión** | SingleSelect | Sin asignar, v0.1.0, ... |
 | **Prioridad** | SingleSelect | Alta, Media, Baja |
-| **Decisión** | SingleSelect | Pendiente, Aprobado, Diferido, Cancelado |
+| **Decision** | SingleSelect | Pendiente, Aprobado, Diferido, Cancelado |
 | **Tipo** | SingleSelect | Bug, Feature, Maintenance, Security, Decision |
 | **Área principal** | SingleSelect | Adaptar al proyecto — ej: App, Desktop, Core, Server, CI, Infra, Docs, Lint, Dependencies, Release, Governance, Upstream |
 | **HighLighted** | SingleSelect | Yes, No |
@@ -252,9 +252,9 @@ bun kanban body <itemId> --append "Alternativas" "1. Opción A: ...\n2. Opción 
 ```
 
 Al cerrar el debate:
-- `Decisión: Aprobado` → avanza a Roadmap
-- `Decisión: Cancelado` → documentar motivo, convertir a Issue, cerrar, Changelog
-- `Decisión: Diferido` → documentar motivo y condición, devolver a Detectado
+- `Decision: Aprobado` → avanza a Roadmap
+- `Decision: Cancelado` → documentar motivo, convertir a Issue, cerrar, Changelog
+- `Decision: Diferido` → documentar motivo y condición, devolver a Detectado
 
 ### 3. Roadmap → Planificar
 

@@ -1,0 +1,63 @@
+{
+  "projectId": "PVT_kwHOBM87Yc4Bf6p0",
+  "repoId": "R_kgDOTxmHGA",
+  "repo": "jaminsmoke/jarvis-skills",
+  "fields": {
+    "Status": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKDbk",
+    "Versión": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD2s",
+    "Prioridad": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD24",
+    "Decision": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD2k",
+    "Tipo": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD2o",
+    "Área principal": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD20",
+    "HighLighted": "PVTSSF_lAHOBM87Yc4Bf6p0zhaKD2g",
+    "Inicio": "PVTF_lAHOBM87Yc4Bf6p0zhaKDvk",
+    "Completado": "PVTF_lAHOBM87Yc4Bf6p0zhaKDvo",
+    "Inicio exacto": "PVTF_lAHOBM87Yc4Bf6p0zhaKDvs",
+    "Completado exacto": "PVTF_lAHOBM87Yc4Bf6p0zhaKDvw"
+  },
+  "options": {
+    "status": {
+      "Detectado": "d1ebbca2",
+      "Debate": "53412931",
+      "Roadmap": "1427e3b7",
+      "Ejecutando": "c1b4ba24",
+      "Verificando": "2cdeb3f0",
+      "Changelog": "4494feed"
+    },
+    "version": {
+      "Sin asignar": "a92e01b2",
+      "v0.1.0": "06eb9375"
+    },
+    "priority": {
+      "Alta": "b8ecbe3f",
+      "Media": "5240abac",
+      "Baja": "46df72b3"
+    },
+    "decision": {
+      "Pendiente": "000bd0be",
+      "Aprobado": "03d31ddc",
+      "Diferido": "4c6bfa7f",
+      "Cancelado": "2396ca03"
+    },
+    "tipo": {
+      "Bug": "82987b1d",
+      "Feature": "0d6a433a",
+      "Maintenance": "c039c1ed",
+      "Security": "9742d0de",
+      "Decision": "29ecf2db"
+    },
+    "area": {
+      "Skills": "5bc917b3",
+      "kanban-cli": "addb1aa3",
+      "Docs": "0a6db9be",
+      "CI": "05799483",
+      "Release": "14e17f44",
+      "Governance": "cb2047ff",
+      "Upstream": "f4c05b1f"
+    },
+    "highlighted": {
+      "Yes": "357ed7ed",
+      "No": "a9f39279"
+    }
+  }
+}
