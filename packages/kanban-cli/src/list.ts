@@ -1,5 +1,5 @@
 import { gql } from "./client"
-import { loadConfig } from "./config"
+import type { KanbanConfig } from "./config"
 
 interface ListFilters {
   status?: string
@@ -91,8 +91,7 @@ async function fetchAllItems(projectId: string): Promise<ItemNode[]> {
  * so results are correct regardless of where the matching items sit on the board.
  * Without filters, only `limit` items are fetched.
  */
-export async function listItems(filters: ListFilters = {}): Promise<ListItem[]> {
-  const cfg = loadConfig()
+export async function listItems(cfg: KanbanConfig, filters: ListFilters = {}): Promise<ListItem[]> {
   const hasFilters = Boolean(filters.status || filters.version || filters.tipo || filters.area)
 
   const nodes = hasFilters

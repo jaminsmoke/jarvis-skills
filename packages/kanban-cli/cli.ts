@@ -175,7 +175,7 @@ Usage:
 
   if (command === "list") {
     const flags = parseFlags(args.slice(1))
-    const items = await listItems({
+    const items = await listItems(cfg, {
       status: flags.status,
       tipo: flags.tipo,
       area: flags.area,

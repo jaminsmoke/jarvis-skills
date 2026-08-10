@@ -29,16 +29,7 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
 
   // Resolve every field and option ID BEFORE creating the draft, so an invalid
   // name fails fast and never leaves an orphaned DraftIssue behind.
-  const resolvedSelect = [
-    { fieldId: fields.fieldId("Status"), optionId: fields.status("Detectado") },
-    { fieldId: fields.fieldId("Versión"), optionId: fields.version(input.version ?? "Sin asignar") },
-    { fieldId: fields.fieldId("Prioridad"), optionId: fields.priority(input.priority ?? "Alta") },
-    ...(input.tipo ? [{ fieldId: fields.fieldId("Tipo"), optionId: fields.tipo(input.tipo) }] : []),
-    ...(input.area ? [{ fieldId: fields.fieldId("Área principal"), optionId: fields.area(input.area) }] : []),
-  ]
-  const inicioExactoFieldId = fields.fieldId("Inicio exacto")
-  const inicioFieldId = fields.fieldId("Inicio")
-
+  // (These are resolved eagerly below via setFieldValue which uses FIELD_TO_CATEGORY)
   // addProjectV2DraftIssue returns the item ID directly (confirmed via API test).
   const createResult = await gql<{
     addProjectV2DraftIssue: { projectItem: { id: string } }
@@ -53,48 +44,14 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
 
   const itemId = createResult.addProjectV2DraftIssue.projectItem.id
 
-  // Set all fields
-  const setField = async (fieldId: string, optionId: string) => {
-    await gql(
-      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-        updateProjectV2ItemFieldValue(input: {
-          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
-          value: { singleSelectOptionId: $optionId }
-        }) { clientMutationId }
-      }`,
-      { projectId: fields.projectId, itemId, fieldId, optionId }
-    )
-  }
-
-  const setText = async (fieldId: string, text: string) => {
-    await gql(
-      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $text: String!) {
-        updateProjectV2ItemFieldValue(input: {
-          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
-          value: { text: $text }
-        }) { clientMutationId }
-      }`,
-      { projectId: fields.projectId, itemId, fieldId, text }
-    )
-  }
-
-  const setDate = async (fieldId: string, date: string) => {
-    await gql(
-      `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-        updateProjectV2ItemFieldValue(input: {
-          projectId: $projectId, itemId: $itemId, fieldId: $fieldId,
-          value: { date: $date }
-        }) { clientMutationId }
-      }`,
-      { projectId: fields.projectId, itemId, fieldId, date }
-    )
-  }
-
-  for (const { fieldId, optionId } of resolvedSelect) {
-    await setField(fieldId, optionId)
-  }
-  await setText(inicioExactoFieldId, inicioExacto)
-  await setDate(inicioFieldId, inicio)
+  // Set all fields via setFieldValue (DRY — same GraphQL mutations)
+  await setFieldValue(fields, itemId, "Status", { option: "Detectado" })
+  await setFieldValue(fields, itemId, "Versión", { option: input.version ?? "Sin asignar" })
+  await setFieldValue(fields, itemId, "Prioridad", { option: input.priority ?? "Alta" })
+  if (input.tipo) await setFieldValue(fields, itemId, "Tipo", { option: input.tipo })
+  if (input.area) await setFieldValue(fields, itemId, "Área principal", { option: input.area })
+  await setFieldValue(fields, itemId, "Inicio exacto", { text: inicioExacto })
+  await setFieldValue(fields, itemId, "Inicio", { date: inicio })
 
   return { itemId, title: input.title }
 }
