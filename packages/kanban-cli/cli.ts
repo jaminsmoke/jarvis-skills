@@ -78,6 +78,21 @@ Usage:
     return
   }
 
+  // config generate does not require an existing .kanbanrc.json
+  if (command === "config" && args[1] === "generate") {
+    const flags = parseFlags(args.slice(2))
+    const projectId = flags.project
+    if (!projectId) {
+      console.error("ERROR: --project <PROJECT_ID> is required")
+      process.exit(1)
+    }
+    const generated = await generateConfig(projectId)
+    writeFileSync(".kanbanrc.json", JSON.stringify(generated, null, 2) + "\n")
+    console.log("Generated .kanbanrc.json with", Object.keys(generated.fields).length, "fields")
+    console.log("⚠️  Fill in repoId and repo manually")
+    return
+  }
+
   const cfg = loadConfig()
   const fields = new FieldResolver(cfg)
 
@@ -129,19 +144,6 @@ Usage:
   if (command === "config") {
     const sub = args[1]
     const flags = parseFlags(args.slice(2))
-
-    if (sub === "generate") {
-      const projectId = flags.project
-      if (!projectId) {
-        console.error("ERROR: --project <PROJECT_ID> is required")
-        process.exit(1)
-      }
-      const cfg = await generateConfig(projectId)
-      writeFileSync(".kanbanrc.json", JSON.stringify(cfg, null, 2) + "\n")
-      console.log("Generated .kanbanrc.json with", Object.keys(cfg.fields).length, "fields")
-      console.log("⚠️  Fill in repoId and repo manually")
-      return
-    }
 
     if (sub === "validate") {
       const issues = await validateConfig()
