@@ -18,6 +18,7 @@ import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
 import type { FieldDataType, OptionColor, FieldOption } from "./src/fields-mutations"
 import { convertDraftToIssue } from "./src/conversions"
+import { createView } from "./src/views"
 import { writeFileSync } from "node:fs"
 
 const args = process.argv.slice(2)
@@ -60,6 +61,7 @@ Usage:
   bun cli.ts body <itemId> --append "Plan" "content"  # append a section
   bun cli.ts config generate --project PVT_...         # generate .kanbanrc.json
   bun cli.ts config validate                           # validate against Project
+  bun cli.ts create-view --name "Mi Vista" [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,Tipo"]
   bun cli.ts list [--status X] [--tipo X] [--area X]  # list items
   bun cli.ts create-field --name "..." --data-type SINGLE_SELECT [--options "A:GRAY,B:BLUE"]
   bun cli.ts update-field --field-id "..." [--name "..."] [--options "A:GRAY,B:BLUE"]
@@ -175,6 +177,31 @@ Usage:
       console.log(`${item.id.slice(0, 20)} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 60)}`)
     }
     console.log(`${items.length} items`)
+    return
+  }
+
+  if (command === "create-view") {
+    const flags = parseFlags(args.slice(1))
+    if (!flags.name) {
+      console.error("ERROR: --name is required")
+      process.exit(1)
+    }
+    const layout = (flags.layout ?? "BOARD_LAYOUT").toUpperCase()
+    if (!["BOARD_LAYOUT", "TABLE_LAYOUT", "ROADMAP_LAYOUT"].includes(layout)) {
+      console.error(`ERROR: invalid layout "${layout}". Valid: BOARD_LAYOUT, TABLE_LAYOUT, ROADMAP_LAYOUT`)
+      process.exit(1)
+    }
+    let visibleFieldIds: string[] | undefined
+    if (flags["visible-fields"]) {
+      visibleFieldIds = []
+      for (const f of flags["visible-fields"].split(",")) {
+        const name = f.trim()
+        try { visibleFieldIds.push(fields.fieldId(name)) }
+        catch { console.warn(`⚠️  Skipping unknown field: "${name}"`) }
+      }
+    }
+    const result = await createView(flags.name, layout as "BOARD_LAYOUT" | "TABLE_LAYOUT" | "ROADMAP_LAYOUT", visibleFieldIds)
+    console.log(JSON.stringify(result, null, 2))
     return
   }
 
