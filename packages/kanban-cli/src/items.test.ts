@@ -18,13 +18,16 @@ const gqlMock = mock(async (query: string, _vars: Record<string, unknown>) => {
   if (query.includes("updateProjectV2ItemFieldValue")) {
     return {}
   }
+  if (query.includes("deleteProjectV2Item")) {
+    return { deleteProjectV2Item: { clientMutationId: "ok" } }
+  }
   throw new Error(`mock: query no contemplada: ${query.slice(0, 60)}`)
 })
 
 mock.module("./client", () => ({ gql: gqlMock }))
 
 // Import dinámico DESPUÉS de mock.module para que el mock esté registrado.
-const { createItem, setFieldValue } = await import("./items")
+const { createItem, setFieldValue, deleteItem, deleteItems } = await import("./items")
 const { FieldResolver } = await import("./fields")
 
 const fields = new FieldResolver(makeConfig())
@@ -128,6 +131,35 @@ describe("setFieldValue — validación de transiciones", () => {
     await setFieldValue(fields, "PVTI_item", "Status", { option: "Detectado" })
     const last = updateCalls().at(-1)
     expect(last).toMatchObject({ optionId: "O_detectado" })
+  })
+})
+
+describe("deleteItem", () => {
+  test("borra un item con la mutación deleteProjectV2Item", async () => {
+    await deleteItem("PVT_proj", "PVTI_item")
+
+    const call = gqlMock.mock.calls.find((c) => String(c[0]).includes("deleteProjectV2Item"))
+    expect(call?.[1]).toMatchObject({ projectId: "PVT_proj", itemId: "PVTI_item" })
+  })
+})
+
+describe("deleteItems (batch)", () => {
+  test("borra cada item del lote en secuencia", async () => {
+    await deleteItems("PVT_proj", ["PVTI_a", "PVTI_b", "PVTI_c"])
+
+    const calls = gqlMock.mock.calls.filter((c) => String(c[0]).includes("deleteProjectV2Item"))
+    expect(calls).toHaveLength(3)
+    expect(calls.map((c) => c[1])).toEqual([
+      { projectId: "PVT_proj", itemId: "PVTI_a" },
+      { projectId: "PVT_proj", itemId: "PVTI_b" },
+      { projectId: "PVT_proj", itemId: "PVTI_c" },
+    ])
+  })
+
+  test("lote vacío no hace ninguna llamada", async () => {
+    await deleteItems("PVT_proj", [])
+    const calls = gqlMock.mock.calls.filter((c) => String(c[0]).includes("deleteProjectV2Item"))
+    expect(calls).toHaveLength(0)
   })
 })
 

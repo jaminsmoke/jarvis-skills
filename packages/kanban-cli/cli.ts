@@ -12,7 +12,7 @@
 import { loadConfig } from "./src/config"
 import { FieldResolver } from "./src/fields"
 
-import { appendBodySection, createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue, showItem } from "./src/items"
+import { appendBodySection, createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, deleteItems, clearFieldValue, setFieldValue, showItem } from "./src/items"
 import { generateConfig, validateConfig } from "./src/config-tools"
 import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
@@ -87,6 +87,8 @@ Usage:
   bun cli.ts set-field <itemId> --field "Completado" --date "2026-08-09"
   bun cli.ts archive <itemId>
   bun cli.ts unarchive <itemId>
+  bun cli.ts delete <itemId> [más IDs...] [--yes]      # IRREVERSIBLE: requiere --yes
+  bun cli.ts delete --status <estado> [--yes]          # borra todos los items de un status
   bun cli.ts clear-field <itemId> --field-id "..."
   bun cli.ts help                                      # show this help
 `)
@@ -412,6 +414,56 @@ Usage:
     }
     await unarchiveItem(cfg.projectId, itemId)
     console.log(`Item ${itemId} unarchived`)
+    return
+  }
+
+  if (command === "delete") {
+    const flags = parseFlags(args.slice(1))
+    const positional = args.slice(1).filter((a) => !a.startsWith("--"))
+
+    let ids: string[]
+    let titles: string[]
+    let isIssue: boolean[]
+
+    if (flags.status) {
+      // Batch por status: resolver IDs y títulos vía listItems
+      const items = await listItems(cfg, { status: flags.status })
+      if (items.length === 0) {
+        console.error(`ERROR: no hay items con status "${flags.status}"`)
+        process.exit(1)
+      }
+      ids = items.map((i) => i.id)
+      titles = items.map((i) => i.title)
+      isIssue = items.map((i) => i.type === "Issue")
+    } else {
+      // Uno o varios IDs posicionales
+      if (positional.length === 0) {
+        console.error("ERROR: itemId(s) required o --status <estado>")
+        process.exit(1)
+      }
+      ids = positional
+      const shown = await Promise.all(ids.map((id) => showItem(id).catch(() => null)))
+      titles = shown.map((s) => s?.title ?? "?")
+      isIssue = shown.map((s) => s?.type === "Issue")
+    }
+
+    // IRREVERSIBLE: show what will be deleted, then require explicit --yes
+    console.log(`⚠️  IRREVERSIBLE: se eliminarán ${ids.length} item(s):`)
+    for (let i = 0; i < ids.length; i++) {
+      const tag = isIssue[i] ? "[Issue]" : "[Draft]"
+      console.log(`  - ${tag} ${titles[i]} (${ids[i]})`)
+    }
+    if (isIssue.some(Boolean)) {
+      console.warn(
+        "⚠️  OJO: algunos items son Issues reales. deleteProjectV2Item los desvincula del proyecto pero NO cierra/borra el Issue de GitHub."
+      )
+    }
+    if (flags.yes !== "true") {
+      console.error("ERROR: delete is IRREVERSIBLE. Confirm with --yes")
+      process.exit(1)
+    }
+    await deleteItems(cfg.projectId, ids)
+    console.log(`${ids.length} item(s) deleted permanently`)
     return
   }
 

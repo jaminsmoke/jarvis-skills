@@ -39,6 +39,8 @@ bun kanban body <itemId> --append "Plan" "..." # añadir sección
 bun kanban move <itemId> [--after <afterId>]   # mover posición
 bun kanban archive <itemId>                    # archivar (soft delete)
 bun kanban unarchive <itemId>                  # desarchivar
+bun kanban delete <itemId> [más IDs...] [--yes]  # ⚠️ borrar definitivo (IRREVERSIBLE, requiere --yes)
+bun kanban delete --status <estado> [--yes]    # ⚠️ borrar todos los items de un status
 bun kanban clear-field <itemId> --field-id "..."  # limpiar campo
 bun kanban convert-draft <itemId>              # DraftIssue → Issue
 
@@ -153,6 +155,7 @@ Todas confirmadas contra la API real (2026-08):
 - `deleteProjectV2Field` ✅
 - `convertProjectV2DraftIssueItemToIssue` → requiere `itemId` + `repositoryId` ✅
 - `archiveProjectV2Item` / `unarchiveProjectV2Item` ✅
+- `deleteProjectV2Item` ✅ (⚠️ irreversible; desvincula el item pero no cierra/borra el Issue subyacente — CLI: `bun kanban delete ... --yes`)
 - `clearProjectV2ItemFieldValue` ✅
 - `updateProjectV2ItemPosition` ✅
 - `copyProjectV2` ✅

@@ -319,6 +319,30 @@ export async function unarchiveItem(projectId: string, itemId: string): Promise<
 }
 
 /**
+ * Permanently delete an item from the project (IRREVERSIBLE).
+ * Unlike archive (soft delete), this removes the item entirely.
+ * The caller is responsible for confirmation before calling this.
+ */
+export async function deleteItem(projectId: string, itemId: string): Promise<void> {
+  await gql(
+    `mutation($projectId: ID!, $itemId: ID!) {
+      deleteProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) { clientMutationId }
+    }`,
+    { projectId, itemId },
+  )
+}
+
+/**
+ * Permanently delete multiple items (batch). IRREVERSIBLE.
+ * The caller is responsible for confirmation before calling this.
+ */
+export async function deleteItems(projectId: string, itemIds: string[]): Promise<void> {
+  for (const itemId of itemIds) {
+    await deleteItem(projectId, itemId)
+  }
+}
+
+/**
  * Clear (remove) a field value from an item.
  */
 export interface ShowItemResult {

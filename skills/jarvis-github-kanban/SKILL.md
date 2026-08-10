@@ -170,6 +170,8 @@ bun kanban convert-draft <itemId>
 bun kanban move <itemId> [--after <afterId>]
 bun kanban archive <itemId>
 bun kanban unarchive <itemId>
+bun kanban delete <itemId> [más IDs...] [--yes]      # ⚠️ IRREVERSIBLE: requiere --yes
+bun kanban delete --status <estado> [--yes]          # ⚠️ borra todos los items de un status
 bun kanban clear-field <itemId> --field-id "<FIELD_ID>"
 
 # Gestionar vistas
@@ -180,6 +182,32 @@ bun kanban config generate --project <PROJECT_ID>
 ```
 
 Si la CLI no está disponible, usar `gh api graphql` con las queries documentadas abajo.
+
+---
+
+## Borrado definitivo de items (delete) ⚠️ IRREVERSIBLE
+
+> **Diferencia clave**: `archive` es **soft delete** (recuperable con `unarchive`). `delete` elimina el item del proyecto **definitivamente** — no se puede deshacer.
+
+```bash
+# Borrar UN item (requiere --yes obligatorio)
+bun kanban delete <itemId> --yes
+
+# Borrar VARIOS items a la vez (IDs posicionales)
+bun kanban delete <itemId1> <itemId2> --yes
+
+# Borrar TODOS los items de un status (resuelve IDs automáticamente)
+bun kanban delete --status Detectado --yes
+```
+
+### Salvaguardas (siempre activas)
+
+1. **Confirmación obligatoria**: sin `--yes` el comando aborta (exit 1) y **nunca borra nada**.
+2. **Siempre muestra el conteo y la lista** antes de pedir confirmación: cada item con su título, ID y tag `[Draft]` o `[Issue]`.
+3. **⚠️ Items que son Issues reales**: `deleteProjectV2Item` los **desvincula del proyecto pero NO cierra ni borra el Issue de GitHub** — el CLI lo advierte explícitamente. Si se quiere cerrar el Issue también, usar `gh issue close` por separado.
+4. **Probar siempre contra un item de prueba/borrador** antes de borrar items reales.
+
+> 💡 **Regla de uso**: preferir `archive`/`unarchive` para limpieza reversible. Usar `delete` solo para items basura/erróneos que no deben existir (p. ej. drafts duplicados o de prueba).
 
 ---
 
@@ -379,7 +407,7 @@ python scripts/kanban-sync.py changelog
 | `convertProjectV2DraftIssueItemToIssue` | itemId, repositoryId | Draft → Issue |
 | `addLabelsToLabelable` | labelableId, labelIds | Añadir labels |
 | `closeIssue` | issueId | Cerrar Issue |
-| `deleteProjectV2Item` | projectId, itemId | Eliminar item |
+| `deleteProjectV2Item` | projectId, itemId | Eliminar item (⚠️ irreversible; CLI: `bun kanban delete ... --yes`) |
 | `createProjectV2View` | projectId, name, layout, configuration | Crear vista |
 | `updateProjectV2View` | viewId, name, layout, configuration | Editar vista |
 | `deleteProjectV2View` | viewId | Borrar vista |
