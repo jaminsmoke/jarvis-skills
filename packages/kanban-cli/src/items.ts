@@ -60,11 +60,92 @@ interface SetFieldInput {
   option?: string
   text?: string
   date?: string
+  force?: boolean
+}
+
+/** Valid status transitions. From → [allowed To] */
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  Detectado: ["Debate"],
+  Debate: ["Roadmap", "Detectado", "Changelog"],
+  Roadmap: ["Ejecutando"],
+  Ejecutando: ["Verificando"],
+  Verificando: ["Changelog"],
+}
+
+/**
+ * Validate that a status transition is allowed.
+ * For Debate→Roadmap, also checks Decision=Aprobado.
+ * For Debate→Detectado, checks Decision=Diferido.
+ * For Debate→Changelog, checks Decision=Cancelado.
+ */
+async function validateTransition(
+  itemId: string,
+  fromStatus: string,
+  toStatus: string,
+  decision?: string,
+): Promise<void> {
+  const allowed = VALID_TRANSITIONS[fromStatus]
+  if (!allowed || !allowed.includes(toStatus)) {
+    const valid = allowed?.join(", ") ?? "ninguna"
+    throw new Error(
+      `Transición inválida: ${fromStatus} → ${toStatus}. Válidas desde ${fromStatus}: ${valid}. Usa --force para bypass.`
+    )
+  }
+
+  // Special validation for Debate transitions
+  if (fromStatus === "Debate") {
+    if (toStatus === "Roadmap" && decision !== "Aprobado") {
+      throw new Error(
+        `Debate → Roadmap requiere Decision=Aprobado (actual: ${decision ?? "sin asignar"}). Usa --force para bypass.`
+      )
+    }
+    if (toStatus === "Detectado" && decision !== "Diferido") {
+      throw new Error(
+        `Debate → Detectado requiere Decision=Diferido (actual: ${decision ?? "sin asignar"}). Usa --force para bypass.`
+      )
+    }
+    if (toStatus === "Changelog" && decision !== "Cancelado") {
+      throw new Error(
+        `Debate → Changelog requiere Decision=Cancelado (actual: ${decision ?? "sin asignar"}). Usa --force para bypass.`
+      )
+    }
+  }
+}
+
+/** Fetch current Status and Decision for an item. */
+async function getItemStatus(itemId: string): Promise<{ status?: string; decision?: string }> {
+  const result = await gql<{
+    node: {
+      fieldValues: {
+        nodes: Array<{ name?: string; field: { name: string } }>
+      }
+    }
+  }>(
+    `query($itemId: ID!) {
+      node(id: $itemId) {
+        ... on ProjectV2Item {
+          fieldValues(first: 20) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue { name, field { ... on ProjectV2FieldCommon { name } } }
+            }
+          }
+        }
+      }
+    }`,
+    { itemId },
+  )
+
+  const fv: Record<string, string> = {}
+  for (const v of result.node.fieldValues.nodes) {
+    if (v.name) fv[v.field.name] = v.name
+  }
+  return { status: fv["Status"], decision: fv["Decisión"] }
 }
 
 /**
  * Set a field value on any item (Draft or Issue).
  * Supports single-select options, text and date values.
+ * When setting Status, validates the transition unless force=true.
  */
 export async function setFieldValue(
   fields: FieldResolver,
@@ -73,6 +154,14 @@ export async function setFieldValue(
   value: SetFieldInput,
 ): Promise<void> {
   const fieldId = fields.fieldId(fieldName)
+
+  // Validate status transitions
+  if (fieldName === "Status" && value.option) {
+    const current = await getItemStatus(itemId)
+    if (current.status && current.status !== value.option && !value.force) {
+      await validateTransition(itemId, current.status, value.option, current.decision)
+    }
+  }
 
   if (value.option) {
     const category = FIELD_TO_CATEGORY[fieldName]

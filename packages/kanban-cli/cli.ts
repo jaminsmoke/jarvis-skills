@@ -82,7 +82,7 @@ Usage:
   bun cli.ts delete-field --field-id "..."
   bun cli.ts convert-draft <itemId>
   bun cli.ts move <itemId> [--after <afterItemId>]
-  bun cli.ts set-field <itemId> --field "Status" --option "Roadmap"
+  bun cli.ts set-field <itemId> --field "Status" --option "Roadmap" [--force]
   bun cli.ts set-field <itemId> --field "Inicio exacto" --text "2026-08-09T00:00:00Z"
   bun cli.ts set-field <itemId> --field "Completado" --date "2026-08-09"
   bun cli.ts archive <itemId>
@@ -387,6 +387,7 @@ Usage:
       option: flags.option,
       text: flags.text,
       date: flags.date,
+      force: flags.force === "true",
     })
     console.log(`Field "${flags.field}" set on ${itemId}`)
     return
