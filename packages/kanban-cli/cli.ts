@@ -11,8 +11,8 @@
 
 import { loadConfig } from "./src/config"
 import { FieldResolver } from "./src/fields"
-import { TEMPLATES, appendSection } from "./src/templates"
-import { createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue } from "./src/items"
+
+import { appendBodySection, createItem, getBody, updateBody, moveItem, archiveItem, unarchiveItem, clearFieldValue, setFieldValue } from "./src/items"
 import { generateConfig, validateConfig } from "./src/config-tools"
 import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
@@ -58,7 +58,7 @@ Usage:
   bun cli.ts create --title "Fix X" --tipo Bug --area Desktop [--priority Alta] [--body "..."]
   bun cli.ts body <itemId>                   # read current body
   bun cli.ts body <itemId> --set "..."       # replace entire body
-  bun cli.ts body <itemId> --append "Plan" "content"  # append a section
+  bun cli.ts body <itemId> --append "Plan" --content "content"  # append a section
   bun cli.ts config generate --project PVT_...         # generate .kanbanrc.json
   bun cli.ts config validate                           # validate against Project
   bun cli.ts create-view --name "Mi Vista" [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,Tipo"]
@@ -130,14 +130,12 @@ Usage:
       await updateBody(itemId, flags.set)
       console.log("Body replaced OK")
     } else if (flags.append) {
-      const section = flags.append
-      const content = flags.content ?? args.slice(args.indexOf(section) + 1).join(" ")
-      if (!content) {
-        console.error("ERROR: --append requires --content or positional content")
+      if (!flags.content) {
+        console.error("ERROR: --append requires --content <text>")
         process.exit(1)
       }
-      await updateBody(itemId, appendSection(await getBody(itemId), section, content))
-      console.log(`Section "${section}" appended OK`)
+      await appendBodySection(itemId, flags.append, flags.content)
+      console.log(`Section "${flags.append}" appended OK`)
     } else {
       const body = await getBody(itemId)
       console.log(body)

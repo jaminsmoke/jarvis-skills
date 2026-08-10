@@ -1,6 +1,7 @@
 import { gql } from "./client"
 import { FieldResolver } from "./fields"
 import { TEMPLATES, appendSection } from "./templates"
+import { FIELD_TO_CATEGORY } from "./config"
 
 interface CreateInput {
   title: string
@@ -96,23 +97,6 @@ export async function createItem(fields: FieldResolver, input: CreateInput): Pro
   await setDate(inicioFieldId, inicio)
 
   return { itemId, title: input.title }
-}
-
-/** Map a field name to its option category in .kanbanrc.json */
-const FIELD_TO_CATEGORY: Record<string, keyof import("./config").KanbanConfig["options"]> = {
-  Status: "status",
-  "Versión": "version",
-  Version: "version",
-  Prioridad: "priority",
-  Priority: "priority",
-  "Decisión": "decision",
-  Decision: "decision",
-  Tipo: "tipo",
-  Type: "tipo",
-  "Área principal": "area",
-  Area: "area",
-  HighLighted: "highlighted",
-  Highlighted: "highlighted",
 }
 
 interface SetFieldInput {

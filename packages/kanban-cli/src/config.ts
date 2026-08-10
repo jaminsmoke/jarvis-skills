@@ -17,6 +17,23 @@ export interface KanbanConfig {
   }
 }
 
+/** Map a field name to its option category in .kanbanrc.json */
+export const FIELD_TO_CATEGORY: Record<string, keyof KanbanConfig["options"]> = {
+  Status: "status",
+  "Versión": "version",
+  Version: "version",
+  Prioridad: "priority",
+  Priority: "priority",
+  "Decisión": "decision",
+  Decision: "decision",
+  Tipo: "tipo",
+  Type: "tipo",
+  "Área principal": "area",
+  Area: "area",
+  HighLighted: "highlighted",
+  Highlighted: "highlighted",
+}
+
 let _config: KanbanConfig | null = null
 
 /**

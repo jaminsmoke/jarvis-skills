@@ -1,5 +1,5 @@
 import { gql } from "./client"
-import { loadConfig, type KanbanConfig } from "./config"
+import { loadConfig, FIELD_TO_CATEGORY, type KanbanConfig } from "./config"
 import { writeFileSync } from "node:fs"
 
 /**
@@ -45,22 +45,6 @@ export async function generateConfig(projectId: string): Promise<KanbanConfig> {
     highlighted: {},
   }
 
-  const nameToCategory: Record<string, keyof KanbanConfig["options"]> = {
-    Status: "status",
-    Versión: "version",
-    Version: "version",
-    Prioridad: "priority",
-    Priority: "priority",
-    Decisión: "decision",
-    Decision: "decision",
-    Tipo: "tipo",
-    Type: "tipo",
-    "Área principal": "area",
-    Area: "area",
-    HighLighted: "highlighted",
-    Highlighted: "highlighted",
-  }
-
   for (const f of data.node.fields.nodes) {
     if (f.name === "Title" || f.name === "Assignees" || f.name === "Labels" ||
         f.name === "Linked pull requests" || f.name === "Milestone" ||
@@ -76,7 +60,7 @@ export async function generateConfig(projectId: string): Promise<KanbanConfig> {
 
     fields[f.name] = f.id
 
-    const cat = nameToCategory[f.name]
+    const cat = FIELD_TO_CATEGORY[f.name]
     if (cat && f.options) {
       for (const o of f.options) {
         options[cat][o.name] = o.id
@@ -145,11 +129,8 @@ export async function validateConfig(): Promise<string[]> {
   }
 
   for (const [cat, opts] of Object.entries(cfg.options)) {
-    const fieldName = Object.entries({
-      status: "Status", version: "Versión", priority: "Prioridad",
-      decision: "Decisión", tipo: "Tipo", area: "Área principal",
-      highlighted: "HighLighted",
-    }).find(([, v]) => v && cat === v)?.[0] ?? cat
+    // Find the field name for this category via FIELD_TO_CATEGORY reverse lookup
+    const fieldName = Object.entries(FIELD_TO_CATEGORY).find(([, c]) => c === cat)?.[0] ?? cat
 
     const real = realFields.get(fieldName)
     if (!real || !real.options) continue
