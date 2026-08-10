@@ -188,7 +188,7 @@ Usage:
     } else {
       for (const item of items) {
         const num = item.number ? `#${item.number}` : "DRAFT"
-        console.log(`${item.id.slice(0, 20)} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 60)}`)
+        console.log(`${item.id} ${num.padEnd(6)} [${(item.status ?? "-").padEnd(12)}] ${(item.tipo ?? "-").padEnd(14)} ${(item.area ?? "-").padEnd(12)} ${item.title.slice(0, 80)}`)
       }
       console.log(`${items.length} items`)
     }
