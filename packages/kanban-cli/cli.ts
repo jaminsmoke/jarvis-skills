@@ -18,7 +18,7 @@ import { listItems } from "./src/list"
 import { createField, updateField, addFieldOption, deleteField } from "./src/fields-mutations"
 import type { FieldDataType, OptionColor, FieldOption } from "./src/fields-mutations"
 import { convertDraftToIssue } from "./src/conversions"
-import { createView } from "./src/views"
+import { createView, updateView, deleteView } from "./src/views"
 import { writeFileSync } from "node:fs"
 
 const args = process.argv.slice(2)
@@ -62,6 +62,8 @@ Usage:
   bun cli.ts config generate --project PVT_...         # generate .kanbanrc.json
   bun cli.ts config validate                           # validate against Project
   bun cli.ts create-view --name "Mi Vista" [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,Tipo"]
+  bun cli.ts update-view <viewId> [--name "..."] [--layout BOARD_LAYOUT] [--visible-fields "Status,..."]
+  bun cli.ts delete-view <viewId>
   bun cli.ts list [--status X] [--tipo X] [--area X]  # list items
   bun cli.ts create-field --name "..." --data-type SINGLE_SELECT [--options "A:GRAY,B:BLUE"]
   bun cli.ts update-field --field-id "..." [--name "..."] [--options "A:GRAY,B:BLUE"]
@@ -201,6 +203,41 @@ Usage:
       }
     }
     const result = await createView(flags.name, layout as "BOARD_LAYOUT" | "TABLE_LAYOUT" | "ROADMAP_LAYOUT", visibleFieldIds)
+    console.log(JSON.stringify(result, null, 2))
+    return
+  }
+
+  if (command === "update-view") {
+    const viewId = args[1]
+    if (!viewId) { console.error("ERROR: viewId required"); process.exit(1) }
+    const flags = parseFlags(args.slice(2))
+    const layout = flags.layout?.toUpperCase()
+    if (layout && !["BOARD_LAYOUT", "TABLE_LAYOUT", "ROADMAP_LAYOUT"].includes(layout)) {
+      console.error(`ERROR: invalid layout "${layout}". Valid: BOARD_LAYOUT, TABLE_LAYOUT, ROADMAP_LAYOUT`)
+      process.exit(1)
+    }
+    let visibleFieldIds: string[] | undefined
+    if (flags["visible-fields"]) {
+      visibleFieldIds = []
+      for (const f of flags["visible-fields"].split(",")) {
+        const name = f.trim()
+        try { visibleFieldIds.push(fields.fieldId(name)) }
+        catch { console.warn(`⚠️  Skipping unknown field: "${name}"`) }
+      }
+    }
+    const result = await updateView(viewId, {
+      name: flags.name,
+      layout: layout as "BOARD_LAYOUT" | "TABLE_LAYOUT" | "ROADMAP_LAYOUT" | undefined,
+      visibleFieldIds,
+    })
+    console.log(JSON.stringify(result, null, 2))
+    return
+  }
+
+  if (command === "delete-view") {
+    const viewId = args[1]
+    if (!viewId) { console.error("ERROR: viewId required"); process.exit(1) }
+    const result = await deleteView(viewId)
     console.log(JSON.stringify(result, null, 2))
     return
   }

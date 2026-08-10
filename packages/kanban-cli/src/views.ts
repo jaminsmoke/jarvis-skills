@@ -84,3 +84,16 @@ export async function updateView(
 
   return result.updateProjectV2View.projectV2View
 }
+
+/**
+ * Delete a view from the project. Cannot delete the last remaining view.
+ */
+export async function deleteView(viewId: string): Promise<{ viewId: string }> {
+  const result = await gql<{ deleteProjectV2View: { projectV2View: { id: string } } }>(
+    `mutation($viewId: ID!) {
+      deleteProjectV2View(input: { viewId: $viewId }) { projectV2View { id } }
+    }`,
+    { viewId },
+  )
+  return { viewId: result.deleteProjectV2View.projectV2View.id }
+}
