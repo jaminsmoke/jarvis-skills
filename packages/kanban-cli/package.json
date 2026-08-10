@@ -4,6 +4,9 @@
   "type": "module",
   "private": true,
   "license": "MIT",
+  "bin": {
+    "kanban": "cli.ts"
+  },
   "description": "CLI toolkit for managing GitHub Projects kanban boards. Create, move, audit, and generate changelogs from your Kanban items.",
   "scripts": {
     "typecheck": "tsc --noEmit"
