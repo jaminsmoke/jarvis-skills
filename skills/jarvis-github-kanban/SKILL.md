@@ -118,11 +118,27 @@ Campos Date: **Inicio**, **Completado**. Campos Text: **Inicio exacto**, **Compl
 
 ### 4. Configurar la vista Kanban
 
-En la vista principal — **solo UI, no hay API**:
-- **Layout**: Board
+La API GraphQL expone mutaciones completas para vistas: crear, renombrar, cambiar layout y configurar campos visibles.
+
+```bash
+# Crear vista nueva con campos visibles configurados
+bun kanban create-view --name "Kanban" --layout BOARD_LAYOUT \
+  --visible-fields "Status,Versión,Prioridad,Decision,Tipo,Área principal,HighLighted"
+
+# Bajo nivel (GraphQL):
+# createProjectV2View(projectId, name, layout: BOARD_LAYOUT,
+#   configuration: { visibleFieldIds: [...] })
+```
+
+**Por API** (mutaciones GraphQL disponibles):
+- `createProjectV2View` ✅: layout (BOARD/TABLE/ROADMAP) + `visibleFieldIds`
+- `updateProjectV2View` ✅: renombrar, cambiar layout, actualizar campos visibles
+- `deleteProjectV2View` ✅: borrar vistas (no la última)
+
+**Solo UI** (no expuesto en GraphQL):
 - **Group by**: Status
 - **Sort**: manual (drag & drop)
-- **Visible fields**: Title, Status, Versión, Prioridad, Tipo, Área principal
+- **Workflow**: habilitar "Auto-close issue" para Changelog→Done (el workflow existe pre-creado pero no hay mutación `enable`)
 
 ### 5. Workflow de estados
 
@@ -155,6 +171,9 @@ bun kanban move <itemId> [--after <afterId>]
 bun kanban archive <itemId>
 bun kanban unarchive <itemId>
 bun kanban clear-field <itemId> --field-id "<FIELD_ID>"
+
+# Gestionar vistas
+bun kanban create-view --name "..." [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,..."]
 
 # Generar .kanbanrc.json con los IDs del proyecto
 bun kanban config generate --project <PROJECT_ID>
@@ -361,6 +380,9 @@ python scripts/kanban-sync.py changelog
 | `addLabelsToLabelable` | labelableId, labelIds | Añadir labels |
 | `closeIssue` | issueId | Cerrar Issue |
 | `deleteProjectV2Item` | projectId, itemId | Eliminar item |
+| `createProjectV2View` | projectId, name, layout, configuration | Crear vista |
+| `updateProjectV2View` | viewId, name, layout, configuration | Editar vista |
+| `deleteProjectV2View` | viewId | Borrar vista |
 
 ---
 

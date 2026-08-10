@@ -48,6 +48,9 @@ bun kanban update-field --field-id "..." --options "A:BLUE,B:GREEN,C:PURPLE"
 bun kanban add-option --field-id "..." --name "..." --color BLUE --desc "..."
 bun kanban delete-field --field-id "..."
 
+# Vistas
+bun kanban create-view --name "..." [--layout BOARD_LAYOUT] [--visible-fields "Status,Versión,..."]
+
 # Config
 bun kanban config generate --project PVT_...   # regenerar .kanbanrc.json
 bun kanban config validate                     # validar contra el Project
@@ -138,7 +141,7 @@ gh run view 31208918303 --repo jaminsmoke/Jarvis --log --job 92947871728
 2. **Crear campos nuevos**: usar `createProjectV2Field` (GraphQL) o `gh project field-create`. Soporta TEXT, SINGLE_SELECT (con opciones iniciales), MULTI_SELECT, NUMBER, DATE, ITERATION.
 3. **Fine-grained PAT**: no accede a user projects (solo org projects).
 4. **GITHUB_TOKEN**: no accede a Projects V2.
-5. **groupBy del Kanban**: no hay API — se configura en la UI.
+5. **groupBy / sortBy del Kanban**: existen como campos `groupByFields`/`sortByFields` en el schema pero siempre vacíos — se configuran en la UI. Layout, nombre y campos visibles SÍ son gestionables por API (`createProjectV2View`/`updateProjectV2View`).
 6. **updateProjectV2Field con singleSelectOptions**: hace reemplazo completo de opciones. Pasar TODAS (existentes + nuevas). Re-consultar IDs después.
 
 ## Mutaciones GraphQL disponibles (Projects V2)
@@ -153,6 +156,9 @@ Todas confirmadas contra la API real (2026-08):
 - `clearProjectV2ItemFieldValue` ✅
 - `updateProjectV2ItemPosition` ✅
 - `copyProjectV2` ✅
+- `createProjectV2View` ✅: crea vista con layout + `visibleFieldIds`
+- `updateProjectV2View` ✅: renombrar, layout, visible fields
+- `deleteProjectV2View` ✅: borrar vista (no la última)
 - `updateProjectV2` (title, public, readme, shortDescription) ✅
 
 ### SingleSelect option colors
