@@ -19,7 +19,9 @@ import { createField, updateField, addFieldOption, deleteField } from "./src/fie
 import type { FieldDataType, OptionColor, FieldOption } from "./src/fields-mutations"
 import { convertDraftToIssue } from "./src/conversions"
 import { createView, updateView, deleteView } from "./src/views"
-import { writeFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
+import { resolve, dirname } from "node:path"
+import { fileURLToPath } from "node:url"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -51,6 +53,14 @@ function parseOptions(raw: string): Array<{ name: string; color: string; descrip
 }
 
 async function main() {
+  if (command === "--version") {
+    const __filename = fileURLToPath(import.meta.url)
+    const pkgPath = resolve(dirname(__filename), "package.json")
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
+    console.log(pkg.version)
+    return
+  }
+
   if (!command || command === "help" || command === "--help") {
     console.log(`kanban-cli — GitHub Projects kanban toolkit
 
