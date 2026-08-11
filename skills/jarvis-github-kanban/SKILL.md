@@ -222,7 +222,7 @@ Detectado → Debate → Roadmap → Ejecutando → Verificando → Changelog
 
 - **0 Drafts en Changelog**: todos los items en Changelog deben ser Issues reales cerrados.
 - **Sin saltos**: cada item avanza en orden. Excepción: Cancelado va directo a Changelog.
-- **Versión objetivo móvil**: siguiente versión posterior a la release `latest`. Consultar siempre con `gh release list`.
+- **Versión objetivo móvil**: cualquier versión **superior** a la release `latest` (comparación semver, p. ej. `v0.1.51`). Consultar siempre con `gh release list`.
 - **Body acumulativo**: el cuerpo empieza en Detectado y evoluciona sin perder secciones.
 - **1 Tipo + 1 Área**: exactamente una label de cada al convertir a Issue.
 - **`Sin asignar`** en Versión es inconsistencia — siempre corregir.
@@ -449,12 +449,12 @@ bun kanban config generate --project <PROJECT_ID>
 ## Versión objetivo móvil
 
 1. **Consultar release `latest`** → `gh release list --repo <owner/repo> --limit 1 --json tagName`
-2. Derivar siguiente patch: `vX.Y.(Z+1)`.
+2. La versión objetivo es **cualquier versión superior** a la release `latest` (comparación semver): p. ej. `vX.Y.(Z+1)` o cualquier nomenclatura mayor como `v0.1.51`. No hace falta que sea exactamente el siguiente patch.
 3. Si el alcance exige minor/major, decidirlo en Debate.
 4. **Crear nueva versión (opción en campo Versión)**:
 ```bash
 bun kanban add-option --field-id "<VERSION_FIELD_ID>" \
-  --name "v0.1.6" --color BLUE --desc "Versión v0.1.6"
+  --name "v0.1.51" --color BLUE --desc "Versión v0.1.51"
 # ⚠️ Todos los IDs de opciones cambian. Regenerar .kanbanrc.json:
 bun kanban config generate --project <PROJECT_ID>
 ```
